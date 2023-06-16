@@ -1,0 +1,4 @@
+fastapi[all]
+pymongo
+passlib[bcrypt]
+fastapi-jwt-auth[asymmetric]
