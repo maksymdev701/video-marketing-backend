@@ -5,7 +5,7 @@ from pydantic import BaseModel, EmailStr, constr
 class UserBaseSchema(BaseModel):
     name: str
     email: str
-    mobile: str | None = None
+    mobile: str
     photo: str | None = None
     role: str | None = None
     tiktok: str | None = None

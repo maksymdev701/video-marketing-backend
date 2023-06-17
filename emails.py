@@ -1,7 +1,7 @@
 from typing import List
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from pydantic import EmailStr, BaseModel
-from .config import settings
+from config import settings
 from jinja2 import Environment, select_autoescape, PackageLoader
 
 
@@ -18,7 +18,6 @@ class EmailSchema(BaseModel):
 class Email:
     def __init__(self, user: dict, url: str, email: List[EmailStr]):
         self.name = user['name']
-        self.sender = 'Codevo <admin@admin.com>'
         self.email = email
         self.url = url
         pass
@@ -31,10 +30,8 @@ class Email:
             MAIL_FROM=settings.EMAIL_FROM,
             MAIL_PORT=settings.EMAIL_PORT,
             MAIL_SERVER=settings.EMAIL_HOST,
-            MAIL_STARTTLS=False,
+            MAIL_STARTTLS=True,
             MAIL_SSL_TLS=False,
-            USE_CREDENTIALS=True,
-            VALIDATE_CERTS=True
         )
         # Generate the HTML template base on the template name
         template = env.get_template(f'{template}.html')
