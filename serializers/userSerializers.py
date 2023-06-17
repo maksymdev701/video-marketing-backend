@@ -23,6 +23,7 @@ def userResponseEntity(user) -> dict:
         "id": str(user["_id"]),
         "name": user["name"],
         "email": user["email"],
+        "mobile": user["mobile"],
         "role": user["role"],
         "photo": user["photo"],
         "tiktok": user["tiktok"],
