@@ -31,7 +31,6 @@ async def create_user(payload: userSchemas.CreateUserSchema, request: Request):
     #  Hash the password
     payload.password = utils.hash_password(payload.password)
     del payload.passwordConfirm
-    payload.role = 'user'
     payload.verified = False
     payload.email = payload.email.lower()
     payload.created_at = datetime.utcnow()
@@ -95,58 +94,58 @@ def login(payload: userSchemas.LoginUserSchema, response: Response, Authorize: A
                         ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, False, 'lax')
 
     # Send both access
-    return {'status': 'success', 'access_token': access_token}
+    return {'status': 'success', 'access_token': access_token, 'role': user['role']}
 
 
-# @router.get('/refresh')
-# def refresh_token(response: Response, Authorize: AuthJWT = Depends()):
-#     try:
-#         Authorize.jwt_refresh_token_required()
+@router.get('/refresh')
+def refresh_token(response: Response, Authorize: AuthJWT = Depends()):
+    try:
+        Authorize.jwt_refresh_token_required()
 
-#         user_id = Authorize.get_jwt_subject()
-#         if not user_id:
-#             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-#                                 detail='Could not refresh access token')
-#         user = userEntity(User.find_one({'_id': ObjectId(str(user_id))}))
-#         if not user:
-#             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-#                                 detail='The user belonging to this token no logger exist')
-#         access_token = Authorize.create_access_token(
-#             subject=str(user["id"]), expires_time=timedelta(minutes=ACCESS_TOKEN_EXPIRES_IN))
-#     except Exception as e:
-#         error = e.__class__.__name__
-#         if error == 'MissingTokenError':
-#             raise HTTPException(
-#                 status_code=status.HTTP_400_BAD_REQUEST, detail='Please provide refresh token')
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        user_id = Authorize.get_jwt_subject()
+        if not user_id:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                detail='Could not refresh access token')
+        user = userEntity(User.find_one({'_id': ObjectId(str(user_id))}))
+        if not user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                detail='The user belonging to this token no logger exist')
+        access_token = Authorize.create_access_token(
+            subject=str(user["id"]), expires_time=timedelta(minutes=ACCESS_TOKEN_EXPIRES_IN))
+    except Exception as e:
+        error = e.__class__.__name__
+        if error == 'MissingTokenError':
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail='Please provide refresh token')
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=error)
 
-#     response.set_cookie('access_token', access_token, ACCESS_TOKEN_EXPIRES_IN * 60,
-#                         ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
-#     response.set_cookie('logged_in', 'True', ACCESS_TOKEN_EXPIRES_IN * 60,
-#                         ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, False, 'lax')
-#     return {'access_token': access_token}
-
-
-# @router.get('/logout', status_code=status.HTTP_200_OK)
-# def logout(response: Response, Authorize: AuthJWT = Depends(), user_id: str = Depends(require_user)):
-#     Authorize.unset_jwt_cookies()
-#     response.set_cookie('logged_in', '', -1)
-
-#     return {'status': 'success'}
+    response.set_cookie('access_token', access_token, ACCESS_TOKEN_EXPIRES_IN * 60,
+                        ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
+    response.set_cookie('logged_in', 'True', ACCESS_TOKEN_EXPIRES_IN * 60,
+                        ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, False, 'lax')
+    return {'access_token': access_token}
 
 
-# @router.get('/verifyemail/{token}')
-# def verify_me(token: str):
-#     hashedCode = hashlib.sha256()
-#     hashedCode.update(bytes.fromhex(token))
-#     verification_code = hashedCode.hexdigest()
-#     result = User.find_one_and_update({"verification_code": verification_code}, {
-#         "$set": {"verification_code": None, "verified": True, "updated_at": datetime.utcnow()}}, new=True)
-#     if not result:
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN, detail='Invalid verification code or account already verified')
-#     return {
-#         "status": "success",
-#         "message": "Account verified successfully"
-#     }
+@router.get('/logout', status_code=status.HTTP_200_OK)
+def logout(response: Response, Authorize: AuthJWT = Depends(), user_id: str = Depends(require_user)):
+    Authorize.unset_jwt_cookies()
+    response.set_cookie('logged_in', '', -1)
+
+    return {'status': 'success'}
+
+
+@router.get('/verifyemail/{token}')
+def verify_me(token: str):
+    hashedCode = hashlib.sha256()
+    hashedCode.update(bytes.fromhex(token))
+    verification_code = hashedCode.hexdigest()
+    result = User.find_one_and_update({"verification_code": verification_code}, {
+        "$set": {"verification_code": None, "verified": True, "updated_at": datetime.utcnow()}}, new=True)
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail='Invalid verification code or account already verified')
+    return {
+        "status": "success",
+        "message": "Account verified successfully"
+    }
