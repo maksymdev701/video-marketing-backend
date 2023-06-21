@@ -4,8 +4,9 @@ from bson.objectid import ObjectId
 
 
 class VideoBaseSchema(BaseModel):
-    brand: str
-    title: str
+    brand: str | None
+    title: str | None
+    filename: str
     creator: ObjectId
     uploaded_at: datetime | None = None
     downloaded_at: datetime | None = None

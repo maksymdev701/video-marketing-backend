@@ -4,3 +4,4 @@ passlib[bcrypt]
 fastapi-jwt-auth[asymmetric]
 Jinja2
 fastapi-mail
+aiofiles
