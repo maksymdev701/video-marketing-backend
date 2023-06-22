@@ -8,8 +8,6 @@ class UserBaseSchema(BaseModel):
     mobile: str
     photo: str | None = None
     role: str | None = None
-    uploads: int = 0
-    downloads: int = 0
     tiktok: str | None = None
     youtube: str | None = None
     twitter: str | None = None
