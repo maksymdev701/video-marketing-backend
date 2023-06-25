@@ -25,3 +25,32 @@ async def upload_videos(files: list[UploadFile] = File(...), user_id: str = Depe
     User.update_one({"_id": ObjectId(user_id)}, {"$inc": {"uploads": len(files)}, "$set": {"updated_at": current_time}})
 
     return {"status": "success"}
+
+@router.get("/downloadable")
+async def get_downloadable_videos(user_id: str = Depends(oauth2.require_user)):
+    availables = Video.find({"$or": [{"marketeer": {"$exists": False}}, {"marketeer": {"$eq": None}}]})
+    videos = []
+
+    for row in availables:
+        videos.append({"_id": str(row["_id"]), "src": row["filename"]})
+
+    start_date = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    end_date = datetime.utcnow()
+
+    # define the aggregation pipeline for monthly downloads
+    pipeline = [
+        # filter the documents by the user ID and the date range
+        {'$match': {'marketeer': ObjectId(user_id), 'created_at': {'$gte': start_date, '$lte': end_date}}},
+        # project only the fields that we need (in this case just the post ID)
+        # group the documents by user ID and count the number of posts for each user
+        {'$group': {'_id': None, 'count': {'$sum': 1}}}
+    ]
+
+    # execute the monthly downloads aggregation pipeline and retrieve the result
+    day_download = 0
+    result = Video.aggregate(pipeline)
+    for row in result:
+        day_download = row["count"]
+
+    return {"status": "success", "videos": videos, "day_download": day_download}
+

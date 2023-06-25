@@ -6,13 +6,12 @@ class UserBaseSchema(BaseModel):
     name: str
     email: str
     mobile: str
-    photo: str | None = None
     role: str | None = None
-    tiktok: str | None = None
-    youtube: str | None = None
-    twitter: str | None = None
-    facebook: str | None = None
-    instagram: str | None = None
+    tiktok: list[str] = []
+    youtube: list[str] = []
+    twitter: list[str] = []
+    facebook: list[str] = []
+    instagram: list[str] = []
     created_at: datetime | None = None
     updated_at: datetime | None = None
 

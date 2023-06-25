@@ -12,6 +12,12 @@ except Exception:
     print("Unable to connect to the MongoDB server.")
 
 db = client[settings.MONGO_INITDB_DATABASE]
+
 User = db.users
 User.create_index([("email", pymongo.ASCENDING)], unique=True)
+
 Video = db.videos
+
+Meta = db.meta
+if Meta.count_documents({}) == 0:
+    Meta.insert_one({"jackpot": 0})
