@@ -11,8 +11,6 @@ class VideoBaseSchema(BaseModel):
     marketeer: ObjectId | None = None
     uploaded_at: datetime | None = None
     downloaded_at: datetime | None = None
-    views: int = 0
-    likes: int = 0
     tiktok: str | None = None
     youtube: str | None = None
     twitter: str | None = None

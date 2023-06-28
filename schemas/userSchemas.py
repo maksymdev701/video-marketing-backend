@@ -10,6 +10,8 @@ class UserBaseSchema(BaseModel):
     tiktok: list[str] = []
     youtube: list[str] = []
     twitter: list[str] = []
+    views: int = 0
+    likes: int = 0
     facebook: list[str] = []
     instagram: list[str] = []
     created_at: datetime | None = None
