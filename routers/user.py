@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from database import User, Video
 from schemas import userSchemas
 import oauth2
+import utils
 
 router = APIRouter()
 
@@ -142,7 +143,7 @@ def get_creator_stats(user_id: str = Depends(oauth2.require_user)):
 
     return {"status": "success", "stats": stats}
 
-@router.get('/list', description="gets users list")
+@router.get('/', description="gets users list")
 def get_users(user_id: str=Depends(oauth2.require_user)):
     user = User.find_one({'_id': ObjectId(user_id)})
     if user["role"] != "admin":
@@ -204,3 +205,28 @@ def get_users(user_id: str=Depends(oauth2.require_user)):
         user.pop('_id')
         users_list.append(user)
     return {"status": "success", "users": users_list}
+
+@router.post('/', description="create new user")
+def create_user(payload: userSchemas.CreateUserSchema, user_id: str=Depends(oauth2.require_user)):
+    user = User.find_one({"_id": ObjectId(user_id)})
+    if user["role"] != "admin":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You have no permission to create new user!")
+    
+    # Check if user already exist
+    user = User.find_one({'email': payload.email.lower()})
+
+    if user:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail='Account already exist')
+    
+    #  Hash the password
+    payload.password = utils.hash_password(payload.password)
+    payload.verified = False
+    del payload.passwordConfirm
+    payload.email = payload.email.lower()
+    payload.created_at = datetime.utcnow()
+    payload.updated_at = payload.created_at
+
+    User.insert_one(payload.dict())
+
+    return {'status': 'success', 'message': 'User created successfully!'}

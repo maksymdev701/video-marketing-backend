@@ -23,7 +23,7 @@ class UserBaseSchema(BaseModel):
 
 class CreateUserSchema(UserBaseSchema):
     password: constr(min_length=8)
-    passwordConfirm: str
+    passwordConfirm: str | None = None
     verified: bool = False
 
 
