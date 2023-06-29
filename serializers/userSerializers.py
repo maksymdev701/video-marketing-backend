@@ -28,6 +28,7 @@ def userResponseEntity(user) -> dict:
         "role": user["role"],
         "views": user["views"],
         "likes": user["likes"],
+        "hashtag": user["hashtag"],
         "tiktok": user["tiktok"],
         "youtube": user["youtube"],
         "twitter": user["twitter"],

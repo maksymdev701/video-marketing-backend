@@ -15,58 +15,6 @@ router = APIRouter()
 def get_me(user_id: str = Depends(oauth2.require_user)):
     user = userResponseEntity(User.find_one({'_id': ObjectId(user_id)}))
     return {"status": "success", "user": user}
-
-@router.get('/stats', description="gets marketeer stats")
-def get_stats(user_id: str = Depends(oauth2.require_user)):
-    user = User.find_one({'_id': ObjectId(user_id)})
-
-    stats = {"downloads": 0, "month_downloads": 0, "total_views": 0, "total_likes": 0, "first_posts": 0}    
-    stats["downloads"] = Video.count_documents({"marketeer": ObjectId(user_id)})
-    
-    start_date = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    end_date = datetime.utcnow()
-
-    # define the aggregation pipeline for monthly downloads
-    pipeline = [
-        # filter the documents by the user ID and the date range
-        {'$match': {'marketeer': ObjectId(user_id), 'created_at': {'$gte': start_date, '$lte': end_date}}},
-        # project only the fields that we need (in this case just the post ID)
-        # group the documents by user ID and count the number of posts for each user
-        {'$group': {'_id': None, 'count': {'$sum': 1}}}
-    ]
-
-    # execute the monthly downloads aggregation pipeline and retrieve the result
-    result = Video.aggregate(pipeline)
-    for row in result:
-        stats["month_downloads"] = row["count"]
-
-    stats["total_views"] = user["views"]
-    stats["total_likes"] = user["likes"]
-
-    # specify the start date and calculate the end date (40 days later)
-    start_date = user["created_at"]
-    end_date = start_date + timedelta(days=40)
-
-    # construct the aggregation pipeline
-    pipeline = [
-        # match documents with created_at field within the specified period
-        {'$match': {'created_at': {'$gte': start_date, '$lte': end_date}}},
-        # group by null to count the number of matching documents
-        {'$group': {'_id': None, 'count': {'$sum': 1}}}
-    ]
-
-    # execute the pipeline and retrieve the result
-    result = Video.aggregate(pipeline)
-    
-    for row in result:
-        stats["first_posts"] = row["count"]
-
-    stats["days_left"] = (end_date - datetime.utcnow()).days        
-
-    return {"status": "success", "stats": stats}
-
-@router.get('/creator', description="gets creator stats")
-def get_creator_stats(user_id: str = Depends(oauth2.require_user)):
     user = userResponseEntity(User.find_one({'_id': ObjectId(user_id)}))
     if user["role"] != "creator":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='You are not creator!')
@@ -223,6 +171,9 @@ def create_user(payload: userSchemas.CreateUserSchema, user_id: str=Depends(oaut
     payload.password = utils.hash_password(payload.password)
     payload.verified = False
     del payload.passwordConfirm
+    if payload.role == "creator":
+        count = User.count_documents({"role": "creator"})
+        payload.hashtag = f"#eurasia{str(count).zfill(10)}"
     payload.email = payload.email.lower()
     payload.created_at = datetime.utcnow()
     payload.updated_at = payload.created_at

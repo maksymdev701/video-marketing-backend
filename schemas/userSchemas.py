@@ -6,7 +6,7 @@ class UserBaseSchema(BaseModel):
     name: str
     email: str
     mobile: str
-    role: str | None = None
+    role: str = "marketeer"
     tiktok: list[str] = []
     youtube: list[str] = []
     twitter: list[str] = []
@@ -14,6 +14,7 @@ class UserBaseSchema(BaseModel):
     likes: int = 0
     facebook: list[str] = []
     instagram: list[str] = []
+    hashtag: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
