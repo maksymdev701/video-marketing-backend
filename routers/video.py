@@ -6,6 +6,7 @@ from datetime import datetime
 
 from database import User, Video
 from utils import generate_filename
+from schemas.videoSchemas import VideoBaseSchema
 
 router = APIRouter()
 
@@ -21,12 +22,12 @@ async def upload_videos(files: list[UploadFile] = File(...), hashtags: str = Bod
 
     for file in files:
         generated_name = generate_filename(file.filename)
+        video_doc = VideoBaseSchema(filename=generated_name, creator=ObjectId(user_id), hashtags=hash_array, uploaded_at=current_time, created_at=current_time, updated_at=current_time)
         destination_file_path = f"./static/uploads/{generated_name}"
         async with aiofiles.open(destination_file_path, 'wb') as out_file:
             while content := await file.read(1024):
                 await out_file.write(content)
-        new_video = {"filename": generated_name, "creator": ObjectId(user_id), "hashtags": hash_array, "uploaded_at": current_time, "created_at": current_time, "updated_at": current_time}
-        Video.insert_one(new_video)
+        Video.insert_one(video_doc.dict())
         
     User.update_one({"_id": ObjectId(user_id)}, {"$inc": {"uploads": len(files)}, "$set": {"updated_at": current_time}})
 
@@ -60,3 +61,10 @@ async def get_downloadable_videos(user_id: str = Depends(oauth2.require_user)):
 
     return {"status": "success", "videos": videos, "day_download": day_download}
 
+@router.put("/download")
+async def download_videos(video_id: str = Body(..., embed=True), user_id: str = Depends(oauth2.require_user)):
+    video = Video.find_one({"_id": ObjectId(video_id)})
+    Video.update_one({"_id": ObjectId(video_id)}, {"$set": {"marketeer": ObjectId(user_id), "downloaded_at": datetime.utcnow()}})
+    User.update_one({"_id": ObjectId(user_id)}, {"$inc": {"downloads": 1}, "$set": {"updated_at": datetime.utcnow()}})
+
+    return {"status": "success", "src": video["filename"]}

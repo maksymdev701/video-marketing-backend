@@ -9,8 +9,8 @@ class VideoBaseSchema(BaseModel):
     filename: str
     creator: ObjectId
     marketeer: ObjectId | None = None
-    uploaded_at: datetime
     hashtags: list
+    uploaded_at: datetime
     downloaded_at: datetime | None = None
     tiktok: str | None = None
     youtube: str | None = None
@@ -18,6 +18,7 @@ class VideoBaseSchema(BaseModel):
     facebook: str | None = None
     instagram: str | None = None
     created_at: datetime
+    updated_at: datetime
 
     class Config:
         orm_mode = True
