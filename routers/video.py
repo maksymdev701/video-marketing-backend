@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Depends
+from fastapi import APIRouter, UploadFile, File, Depends, Body, HTTPException, status
 import oauth2
 import aiofiles
 from bson.objectid import ObjectId
@@ -10,8 +10,14 @@ from utils import generate_filename
 router = APIRouter()
 
 @router.post("/upload")
-async def upload_videos(files: list[UploadFile] = File(...), user_id: str = Depends(oauth2.require_user)):
+async def upload_videos(files: list[UploadFile] = File(...), hashtags: str = Body(..., embed=True), user_id: str = Depends(oauth2.require_user)):
+    user = User.find_one({"_id": ObjectId(user_id)})
+    if user["role"] != "creator":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You have no permission to upload videos.")
+
     current_time = datetime.utcnow()
+    hash_array = hashtags.split(",")
+    hash_array.append(user["hashtag"])
 
     for file in files:
         generated_name = generate_filename(file.filename)
@@ -19,7 +25,7 @@ async def upload_videos(files: list[UploadFile] = File(...), user_id: str = Depe
         async with aiofiles.open(destination_file_path, 'wb') as out_file:
             while content := await file.read(1024):
                 await out_file.write(content)
-        new_video = {"filename": generated_name, "creator": ObjectId(user_id), "uploaded_at": current_time, "created_at": current_time, "updated_at": current_time}
+        new_video = {"filename": generated_name, "creator": ObjectId(user_id), "hashtags": hash_array, "uploaded_at": current_time, "created_at": current_time, "updated_at": current_time}
         Video.insert_one(new_video)
         
     User.update_one({"_id": ObjectId(user_id)}, {"$inc": {"uploads": len(files)}, "$set": {"updated_at": current_time}})
