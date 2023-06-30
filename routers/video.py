@@ -47,7 +47,7 @@ async def get_downloadable_videos(user_id: str = Depends(oauth2.require_user)):
     # define the aggregation pipeline for monthly downloads
     pipeline = [
         # filter the documents by the user ID and the date range
-        {'$match': {'marketeer': ObjectId(user_id), 'created_at': {'$gte': start_date, '$lte': end_date}}},
+        {'$match': {'marketeer': ObjectId(user_id), 'downloaded_at': {'$gte': start_date, '$lte': end_date}}},
         # project only the fields that we need (in this case just the post ID)
         # group the documents by user ID and count the number of posts for each user
         {'$group': {'_id': None, 'count': {'$sum': 1}}}
@@ -59,7 +59,12 @@ async def get_downloadable_videos(user_id: str = Depends(oauth2.require_user)):
     for row in result:
         day_download = row["count"]
 
-    return {"status": "success", "videos": videos, "day_download": day_download}
+    downloaded_today = Video.find({"marketeer": ObjectId(user_id), "downloaded_at": {'$gte': start_date, '$lte': end_date}})
+    today_list = []
+    for row in downloaded_today:
+        today_list.append({"_id": str(row["_id"]), "hashtags": row["hashtags"]})
+
+    return {"status": "success", "videos": videos, "day_download": day_download, "today_list": today_list}
 
 @router.put("/download")
 async def download_videos(video_id: str = Body(..., embed=True), user_id: str = Depends(oauth2.require_user)):

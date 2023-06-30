@@ -4,7 +4,7 @@ from serializers.userSerializers import userResponseEntity
 from datetime import datetime, timedelta
 
 from database import User, Video
-from schemas import userSchemas
+from schemas import userSchemas, usualSchemas
 import oauth2
 import utils
 
@@ -181,3 +181,9 @@ def create_user(payload: userSchemas.CreateUserSchema, user_id: str=Depends(oaut
     User.insert_one(payload.dict())
 
     return {'status': 'success', 'message': 'User created successfully!'}
+
+@router.put('/channel', description="add new channels")
+async def add_channel(payload: usualSchemas.AddChannelRequestSchema, user_id: str=Depends(oauth2.require_user)):
+    print(payload)
+    User.update_one({"_id": ObjectId(user_id)}, {"$set": {payload.channel_type.lower(): payload.channel_list}})
+    return {"status": "success"}
