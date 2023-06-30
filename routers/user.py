@@ -184,6 +184,16 @@ def create_user(payload: userSchemas.CreateUserSchema, user_id: str=Depends(oaut
 
 @router.put('/channel', description="add new channels")
 async def add_channel(payload: usualSchemas.AddChannelRequestSchema, user_id: str=Depends(oauth2.require_user)):
-    print(payload)
     User.update_one({"_id": ObjectId(user_id)}, {"$set": {payload.channel_type.lower(): payload.channel_list}})
+    return {"status": "success"}
+
+@router.patch('/', description="updates user profile")
+async def update_profile(payload: usualSchemas.UpdateProfileRequestSchema, user_id: str=Depends(oauth2.require_user)):
+    if payload.field_name == "email":
+        exsiting = User.find_one({"email": payload.field_data})
+        if exsiting:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Email is already in use!')
+    if payload.field_name == "password":
+        payload.field_data = utils.hash_password(payload.field_data)
+    User.update_one({"_id": ObjectId(user_id)}, {"$set": {payload.field_name: payload.field_data}})
     return {"status": "success"}
