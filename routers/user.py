@@ -194,6 +194,8 @@ async def update_profile(payload: usualSchemas.UpdateProfileRequestSchema, user_
         if exsiting:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Email is already in use!')
     if payload.field_name == "password":
+        if len(payload.field_data) < 8:
+            raise HTTPException(status_code=status.HTTP_411_LENGTH_REQUIRED, detail="Password must be longer than 8 letters.")
         payload.field_data = utils.hash_password(payload.field_data)
     User.update_one({"_id": ObjectId(user_id)}, {"$set": {payload.field_name: payload.field_data}})
     return {"status": "success"}

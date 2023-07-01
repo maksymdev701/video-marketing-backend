@@ -120,12 +120,11 @@ def get_stats(user_id: str = Depends(oauth2.require_user)):
 @router.get('/creator', description="gets creator stats")
 def get_creator_stats(user_id: str = Depends(oauth2.require_user)):
     user = userResponseEntity(User.find_one({'_id': ObjectId(user_id)}))
-    if user["role"] != "creator":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='You are not creator!')
     
-    stats = {"jackpot": 12000, "cash_prize_1": 2000, "month_uploads": 0, "total_uploads": 0, "champion_bonus": 3000, "cash_prize_2": 0, "ranking": 1, "creators": 0, "champions": [], "uploads": 0, "total_views": 0, "total_likes": 0}
+    stats = {"cash_prize_1": 2000, "month_uploads": 0, "total_uploads": 0, "cash_prize_2": 0, "ranking": 1, "creators": 0, "champions": [], "uploads": 0, "total_views": 0, "total_likes": 0}
     stats["total_uploads"] = Video.count_documents({})
     stats["creators"] = User.count_documents({"role": "creator"})
+    stats["jackpot"] = Meta.find_one({})["jackpot"]
 
     start_date = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     end_date = datetime.utcnow()
