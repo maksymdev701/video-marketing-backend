@@ -56,9 +56,9 @@ async def create_user(payload: userSchemas.CreateUserSchema, request: Request):
             },
         )
 
-        # url = f"{request.url.scheme}://{request.client.host}:{request.url.port}/api/auth/verifyemail/{token.hex()}"
+        url = f"{request.url.scheme}://{request.client.host}:{request.url.port}/api/auth/verifyemail/{token.hex()}"
         print(token)
-        # await Email(userEntity(new_user), url, [EmailStr(payload.email)]).sendVerificationCode()
+        await Email(userEntity(new_user), url, [EmailStr(payload.email)]).sendVerificationCode()
     except Exception as error:
         print(error)
         User.find_one_and_update(
