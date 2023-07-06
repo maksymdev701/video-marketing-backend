@@ -56,8 +56,7 @@ async def create_user(payload: userSchemas.CreateUserSchema, request: Request):
             },
         )
 
-        url = f"{request.url.scheme}://{request.client.host}:{request.url.port}/api/auth/verifyemail/{token.hex()}"
-        print(token)
+        url = f"https://backoffice.eurasiamedia.net/api/auth/verifyemail/{token.hex()}"
         await Email(userEntity(new_user), url, [EmailStr(payload.email)]).sendVerificationCode()
     except Exception as error:
         print(error)
