@@ -1,9 +1,7 @@
-.env
 venv
 *.pyc
 *.pyo
 __pycache__/
-static
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
