@@ -6,7 +6,7 @@ import uvicorn
 from config import settings
 from routers import auth, user, video, stats
 
-origins = [settings.CLIENT_ORIGIN]
+origins = [settings.CLIENT_ORIGIN, "http://localhost:3000"]
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
