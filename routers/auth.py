@@ -55,9 +55,8 @@ async def create_user(payload: userSchemas.CreateUserSchema, request: Request):
                 }
             },
         )
-
-        url = f"https://backoffice.eurasiamedia.net/api/auth/verifyemail/{token.hex()}"
-        await Email(userEntity(new_user), url, [EmailStr(payload.email)]).sendVerificationCode()
+        # print(token.hex())
+        await Email(userEntity(new_user), token.hex(), [EmailStr(payload.email)]).sendVerificationCode()
     except Exception as error:
         print(error)
         User.find_one_and_update(
@@ -227,11 +226,12 @@ def logout(
     return {"status": "success"}
 
 
-@router.get("/verifyemail/{token}")
-def verify_me(token: str):
+@router.patch("/verifyemail/{token}")
+def verify_me(token: str, response: Response, Authorize: AuthJWT = Depends()):
     hashedCode = hashlib.sha256()
     hashedCode.update(bytes.fromhex(token))
     verification_code = hashedCode.hexdigest()
+    db_user = User.find_one({"verification_code": verification_code})
     result = User.find_one_and_update(
         {"verification_code": verification_code},
         {
@@ -248,4 +248,53 @@ def verify_me(token: str):
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid verification code or account already verified",
         )
-    return {"status": "success", "message": "Account verified successfully"}
+    user = userEntity(db_user)
+
+    # Create access token
+    access_token = Authorize.create_access_token(
+        subject=str(user["id"]), expires_time=timedelta(minutes=ACCESS_TOKEN_EXPIRES_IN)
+    )
+
+    # Create refresh token
+    refresh_token = Authorize.create_refresh_token(
+        subject=str(user["id"]),
+        expires_time=timedelta(minutes=REFRESH_TOKEN_EXPIRES_IN),
+    )
+
+    # Store refresh and access tokens in cookie
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        max_age=ACCESS_TOKEN_EXPIRES_IN * 60,
+        expires=ACCESS_TOKEN_EXPIRES_IN * 60,
+        path="/",
+        domain=None,
+        secure=True,
+        httponly=True,
+        samesite="none",
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        max_age=REFRESH_TOKEN_EXPIRES_IN * 60,
+        expires=REFRESH_TOKEN_EXPIRES_IN * 60,
+        path="/",
+        domain=None,
+        secure=True,
+        httponly=True,
+        samesite="none",
+    )
+    response.set_cookie(
+        key="logged_in",
+        value="True",
+        max_age=ACCESS_TOKEN_EXPIRES_IN * 60,
+        expires=ACCESS_TOKEN_EXPIRES_IN * 60,
+        path="/",
+        domain=None,
+        secure=True,
+        httponly=True,
+        samesite="none",
+    )
+
+    # Send both access
+    return {"status": "success", "access_token": access_token, "role": user["role"]}

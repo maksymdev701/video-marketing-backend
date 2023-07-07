@@ -16,10 +16,10 @@ class EmailSchema(BaseModel):
 
 
 class Email:
-    def __init__(self, user: dict, url: str, email: List[EmailStr]):
+    def __init__(self, user: dict, code: str, email: List[EmailStr]):
         self.name = user['name']
         self.email = email
-        self.url = url
+        self.code = code
         pass
 
     async def sendMail(self, subject, template):
@@ -37,7 +37,7 @@ class Email:
         template = env.get_template(f'{template}.html')
 
         html = template.render(
-            url=self.url,
+            code=self.code,
             first_name=self.name,
             subject=subject
         )
