@@ -313,7 +313,7 @@ async def reset_password(email: str = Body(..., embed=True)):
     print(user)
     
     try:
-        await ForgotEmail(userEntity(user), password=generated_password, email=[EmailStr(email)]).sendResetPassword()
+        await ForgotEmail(userEntity(user), generated_password, [EmailStr(email)]).sendResetPassword()
     except Exception as error:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
