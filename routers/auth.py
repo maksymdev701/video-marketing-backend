@@ -318,4 +318,4 @@ async def reset_password(email: str = Body(..., embed=True)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="There was an error sending email",
         )
-    return { status: "success" }
+    return { "status": "success" }
