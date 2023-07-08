@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Request, Response, Depends
+from fastapi import APIRouter, HTTPException, status, Request, Response, Depends, Body
 from datetime import datetime, timedelta
 from random import randbytes
 import hashlib
@@ -7,7 +7,8 @@ from bson import ObjectId
 
 from schemas import userSchemas
 from serializers.userSerializers import userEntity
-from emails import Email
+from emails.verifyEmail import VerifyEmail
+from emails.forgotEmail import ForgotEmail
 from database import User
 import utils
 from oauth2 import AuthJWT, require_user
@@ -56,7 +57,7 @@ async def create_user(payload: userSchemas.CreateUserSchema, request: Request):
             },
         )
         # print(token.hex())
-        await Email(userEntity(new_user), token.hex(), [EmailStr(payload.email)]).sendVerificationCode()
+        await VerifyEmail(userEntity(new_user), token.hex(), [EmailStr(payload.email)]).sendVerificationCode()
     except Exception as error:
         print(error)
         User.find_one_and_update(
@@ -74,7 +75,7 @@ async def create_user(payload: userSchemas.CreateUserSchema, request: Request):
 
 
 @router.post("/login")
-def login(
+async def login(
     payload: userSchemas.LoginUserSchema,
     response: Response,
     Authorize: AuthJWT = Depends(),
@@ -153,7 +154,7 @@ def login(
 
 
 @router.get("/refresh")
-def refresh_token(response: Response, Authorize: AuthJWT = Depends()):
+async def refresh_token(response: Response, Authorize: AuthJWT = Depends()):
     try:
         Authorize.jwt_refresh_token_required()
 
@@ -208,7 +209,7 @@ def refresh_token(response: Response, Authorize: AuthJWT = Depends()):
 
 
 @router.get("/logout", status_code=status.HTTP_200_OK)
-def logout(
+async def logout(
     response: Response,
     Authorize: AuthJWT = Depends(),
     user_id: str = Depends(require_user),
@@ -227,7 +228,7 @@ def logout(
 
 
 @router.patch("/verifyemail/{token}")
-def verify_me(token: str, response: Response, Authorize: AuthJWT = Depends()):
+async def verify_me(token: str, response: Response, Authorize: AuthJWT = Depends()):
     hashedCode = hashlib.sha256()
     hashedCode.update(bytes.fromhex(token))
     verification_code = hashedCode.hexdigest()
@@ -298,3 +299,24 @@ def verify_me(token: str, response: Response, Authorize: AuthJWT = Depends()):
 
     # Send both access
     return {"status": "success", "access_token": access_token, "role": user["role"]}
+
+
+@router.patch("/resetpassword")
+async def reset_password(email: str = Body(..., embed=True)):
+    user = User.find_one({"email": email})
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No account with this email.")
+
+    generated_password = randbytes(10).hex()
+    User.find_one_and_update({"email": email}, {"$set": {"password": utils.hash_password(generated_password), "updated_at": datetime.utcnow()}})
+
+    print(user)
+    
+    try:
+        await ForgotEmail(userEntity(user), password=generated_password, email=[EmailStr(email)]).sendResetPassword()
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="There was an error sending email",
+        )
+    return { status: "success" }

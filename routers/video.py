@@ -29,8 +29,6 @@ async def upload_videos(files: list[UploadFile] = File(...), hashtags: str = Bod
                 await out_file.write(content)
         Video.insert_one(video_doc.dict())
         
-    User.update_one({"_id": ObjectId(user_id)}, {"$inc": {"uploads": len(files)}, "$set": {"updated_at": current_time}})
-
     return {"status": "success"}
 
 @router.get("/downloadable")
@@ -70,6 +68,5 @@ async def get_downloadable_videos(user_id: str = Depends(oauth2.require_user)):
 async def download_videos(video_id: str = Body(..., embed=True), user_id: str = Depends(oauth2.require_user)):
     video = Video.find_one({"_id": ObjectId(video_id)})
     Video.update_one({"_id": ObjectId(video_id)}, {"$set": {"marketeer": ObjectId(user_id), "downloaded_at": datetime.utcnow()}})
-    User.update_one({"_id": ObjectId(user_id)}, {"$inc": {"downloads": 1}, "$set": {"updated_at": datetime.utcnow()}})
 
     return {"status": "success", "src": video["filename"]}

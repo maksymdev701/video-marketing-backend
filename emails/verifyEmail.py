@@ -6,7 +6,7 @@ from jinja2 import Environment, select_autoescape, PackageLoader
 
 
 env = Environment(
-    loader=PackageLoader('templates', ''),
+    loader=PackageLoader('templates', 'verify'),
     autoescape=select_autoescape(['html', 'xml'])
 )
 
@@ -15,7 +15,7 @@ class EmailSchema(BaseModel):
     email: List[EmailStr]
 
 
-class Email:
+class VerifyEmail:
     def __init__(self, user: dict, code: str, email: List[EmailStr]):
         self.name = user['name']
         self.email = email
