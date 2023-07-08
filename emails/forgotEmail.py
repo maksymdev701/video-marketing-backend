@@ -1,6 +1,6 @@
 from typing import List
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
-from pydantic import EmailStr, BaseModel
+from pydantic import EmailStr
 from config import settings
 from jinja2 import Environment, select_autoescape, PackageLoader
 
@@ -9,10 +9,6 @@ env = Environment(
     loader=PackageLoader('templates', 'forgot'),
     autoescape=select_autoescape(['html', 'xml'])
 )
-
-
-class EmailSchema(BaseModel):
-    email: List[EmailStr]
 
 
 class ForgotEmail:

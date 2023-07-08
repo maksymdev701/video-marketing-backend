@@ -310,11 +310,10 @@ async def reset_password(email: str = Body(..., embed=True)):
     generated_password = randbytes(10).hex()
     User.find_one_and_update({"email": email}, {"$set": {"password": utils.hash_password(generated_password), "updated_at": datetime.utcnow()}})
 
-    print(user)
-    
     try:
         await ForgotEmail(userEntity(user), generated_password, [EmailStr(email)]).sendResetPassword()
     except Exception as error:
+        print(error)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="There was an error sending email",
