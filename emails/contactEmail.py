@@ -56,5 +56,5 @@ class ContactEmail:
         fm = FastMail(conf)
         await fm.send_message(message)
 
-    async def sendVerificationCode(self):
+    async def sendContent(self):
         await self.sendMail('Contact', 'contact')
