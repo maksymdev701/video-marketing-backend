@@ -42,3 +42,10 @@ class UserResponseSchema(UserBaseSchema):
 class UserResponse(BaseModel):
     status: str
     user: UserResponseSchema
+
+
+class ContactSchema(BaseModel):
+    name: str
+    email: EmailStr
+    message: str
+    role: str

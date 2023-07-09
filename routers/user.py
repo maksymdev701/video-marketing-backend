@@ -5,12 +5,14 @@ from datetime import datetime, timedelta
 from random import randbytes
 import hashlib
 from pydantic import EmailStr
+from config import settings
 
 from database import User, Video
 from schemas import userSchemas, usualSchemas
 import oauth2
 import utils
 from emails.verifyEmail import VerifyEmail
+from emails.contactEmail import ContactEmail
 
 router = APIRouter()
 
@@ -189,4 +191,14 @@ async def update_profile(
     User.update_one(
         {"_id": ObjectId(user_id)}, {"$set": {payload.field_name: payload.field_data}}
     )
+    return {"status": "success"}
+
+
+@router.post("/contact", description="Contact")
+async def contact(content: userSchemas.ContactSchema, user_id: str = Depends(oauth2.require_user)):
+    user = User.find_one(user_id)
+    try:
+        await ContactEmail(userResponseEntity(user), content.name, content.email, content.message, content.role, [EmailStr(settings.EMAIL_FROM)])
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Email Couldn't be sent.")
     return {"status": "success"}
