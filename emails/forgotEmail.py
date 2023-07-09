@@ -51,4 +51,4 @@ class ForgotEmail:
         await fm.send_message(message)
 
     async def sendResetPassword(self):
-        await self.sendMail('Your password reset (Valid for 10min)', 'forgot')
+        await self.sendMail('Your password reset', 'forgot')

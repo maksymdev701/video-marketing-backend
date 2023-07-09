@@ -1,12 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from bson.objectid import ObjectId
-from serializers.userSerializers import userResponseEntity
+from serializers.userSerializers import userResponseEntity, userEntity
 from datetime import datetime, timedelta
+from random import randbytes
+import hashlib
+from pydantic import EmailStr
 
 from database import User, Video
 from schemas import userSchemas, usualSchemas
 import oauth2
 import utils
+from emails.verifyEmail import VerifyEmail
 
 router = APIRouter()
 
@@ -89,7 +93,7 @@ def get_users(user_id: str = Depends(oauth2.require_user)):
 
 
 @router.post("/", description="create new user")
-def create_user(
+async def create_user(
     payload: userSchemas.CreateUserSchema, user_id: str = Depends(oauth2.require_user)
 ):
     user = User.find_one({"_id": ObjectId(user_id)})
@@ -109,7 +113,6 @@ def create_user(
 
     #  Hash the password
     payload.password = utils.hash_password(payload.password)
-    payload.verified = False
     del payload.passwordConfirm
     if payload.role == "creator":
         count = User.count_documents({"role": "creator"})
@@ -118,9 +121,39 @@ def create_user(
     payload.created_at = datetime.utcnow()
     payload.updated_at = payload.created_at
 
-    User.insert_one(payload.dict())
+    result = User.insert_one(payload.dict())
+    new_user = User.find_one({"_id": result.inserted_id})
 
-    return {"status": "success", "message": "User created successfully!"}
+    try:
+        token = randbytes(10)
+        hashedCode = hashlib.sha256()
+        hashedCode.update(token)
+        verification_code = hashedCode.hexdigest()
+        User.find_one_and_update(
+            {"_id": result.inserted_id},
+            {
+                "$set": {
+                    "verification_code": verification_code,
+                    "updated_at": datetime.utcnow(),
+                }
+            },
+        )
+        # print(token.hex())
+        await VerifyEmail(userEntity(new_user), token.hex(), [EmailStr(payload.email)]).sendVerificationCode()
+    except Exception as error:
+        print(error)
+        User.find_one_and_update(
+            {"_id": result.inserted_id},
+            {"$set": {"verification_code": None, "updated_at": datetime.utcnow()}},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="There was an error sending email",
+        )
+    return {
+        "status": "success",
+        "message": "Verification token successfully sent to user email",
+    }
 
 
 @router.put("/channel", description="add new channels")

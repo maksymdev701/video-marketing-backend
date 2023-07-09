@@ -35,7 +35,6 @@ async def create_user(payload: userSchemas.CreateUserSchema, request: Request):
     #  Hash the password
     payload.password = utils.hash_password(payload.password)
     del payload.passwordConfirm
-    payload.verified = False
     payload.email = payload.email.lower()
     payload.created_at = datetime.utcnow()
     payload.updated_at = payload.created_at
@@ -88,13 +87,6 @@ async def login(
             detail="Incorrect Email or Password",
         )
     user = userEntity(db_user)
-
-    # Check if user verified his email
-    if not user["verified"]:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Please verify your email address",
-        )
 
     # Check if the password is valid
     if not utils.verify_password(payload.password, user["password"]):
@@ -150,7 +142,7 @@ async def login(
     )
 
     # Send both access
-    return {"status": "success", "access_token": access_token, "role": user["role"]}
+    return {"status": "success", "access_token": access_token, "role": user["role"], "verified": user["verified"]}
 
 
 @router.get("/refresh")

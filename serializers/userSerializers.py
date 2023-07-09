@@ -26,6 +26,7 @@ def userResponseEntity(user) -> dict:
         "email": user["email"],
         "mobile": user["mobile"],
         "role": user["role"],
+        "verified": user["verified"],
         "views": user["views"],
         "likes": user["likes"],
         "hashtag": user["hashtag"],

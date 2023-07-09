@@ -15,6 +15,7 @@ class UserBaseSchema(BaseModel):
     facebook: list[str] = []
     instagram: list[str] = []
     hashtag: str | None = None
+    verified: bool = False
     created_at: datetime | None = None
     updated_at: datetime | None = None
 

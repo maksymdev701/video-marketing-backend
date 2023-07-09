@@ -55,4 +55,4 @@ class VerifyEmail:
         await fm.send_message(message)
 
     async def sendVerificationCode(self):
-        await self.sendMail('Your verification code (Valid for 10min)', 'verification')
+        await self.sendMail('Your verification code', 'verification')
