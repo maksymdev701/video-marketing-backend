@@ -199,6 +199,7 @@ async def contact(content: userSchemas.ContactSchema, user_id: str = Depends(oau
     user = User.find_one(user_id)
     try:
         await ContactEmail(userResponseEntity(user), content.name, content.email, content.message, content.role, [EmailStr(settings.EMAIL_FROM)])
-    except Exception:
+    except Exception as error:
+        print(error)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Email Couldn't be sent.")
     return {"status": "success"}
