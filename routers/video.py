@@ -66,6 +66,27 @@ async def get_downloadable_videos(user_id: str = Depends(oauth2.require_user)):
 
 @router.put("/download")
 async def download_videos(video_id: str = Body(..., embed=True), user_id: str = Depends(oauth2.require_user)):
+    start_date = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    end_date = datetime.utcnow()
+
+    # define the aggregation pipeline for monthly downloads
+    pipeline = [
+        # filter the documents by the user ID and the date range
+        {'$match': {'marketeer': ObjectId(user_id), 'downloaded_at': {'$gte': start_date, '$lte': end_date}}},
+        # project only the fields that we need (in this case just the post ID)
+        # group the documents by user ID and count the number of posts for each user
+        {'$group': {'_id': None, 'count': {'$sum': 1}}}
+    ]
+
+    # execute the monthly downloads aggregation pipeline and retrieve the result
+    day_download = 0
+    result = Video.aggregate(pipeline)
+    for row in result:
+        day_download = row["count"]
+
+    if day_download == 3:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can't exceed daily downloads limit.")
+
     video = Video.find_one({"_id": ObjectId(video_id)})
     Video.update_one({"_id": ObjectId(video_id)}, {"$set": {"marketeer": ObjectId(user_id), "downloaded_at": datetime.utcnow()}})
 

@@ -91,7 +91,7 @@ def get_creator_stats(user_id: str = Depends(oauth2.require_user)):
     }
     stats["total_uploads"] = Video.count_documents({})
     stats["creators"] = User.count_documents({"role": "creator"})
-    stats["jackpot"] = Meta.find_one({})["jackpot"]
+    stats["jackpot"] = Meta.find_one({})["rewards"]
 
     start_date = datetime.utcnow().replace(
         day=1, hour=0, minute=0, second=0, microsecond=0
@@ -157,7 +157,7 @@ def get_creator_stats(user_id: str = Depends(oauth2.require_user)):
 
 @router.post("/jackpot")
 async def update_jackpot(jackpot: int = Body(..., embed=True)):
-    Meta.update_one({}, {"$set": {"jackpot": jackpot}})
+    Meta.update_one({}, {"$set": {"rewards": jackpot}})
     return {"state": "success"}
 
 
@@ -272,6 +272,7 @@ async def get_dashboard_info(user_id: str = Depends(oauth2.require_user)):
                 "uploads": unit_uploads,
                 "downloads": unit_downloads,
                 "marketeers": new_marketeers,
+                "month_abbr": calendar.month_abbr[1:][i - 1]
             }
         )
 
@@ -304,6 +305,7 @@ async def get_dashboard_info(user_id: str = Depends(oauth2.require_user)):
                 "uploads": unit_uploads,
                 "downloads": unit_downloads,
                 "marketeers": new_marketeers,
+                "month_abbr": calendar.month_abbr[1:][i - 1]
             }
         )
 

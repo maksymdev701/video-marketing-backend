@@ -20,4 +20,4 @@ Video = db.videos
 
 Meta = db.meta
 if Meta.count_documents({}) == 0:
-    Meta.insert_one({"jackpot": 0})
+    Meta.insert_one({"rewards": 0})
